@@ -46,6 +46,22 @@ WordCount *word_counts = NULL;
  */
 int num_words(FILE* infile) {
   int num_words = 0;
+  char c;
+  bool is_word = false;
+  while((c = fgetc(infile)) != EOF)
+	{
+		if((c == ' ' || c == '\n') && is_word)
+		{
+			// printf("\n");
+			++num_words;
+      is_word = false;
+		}
+		else if (c != ' ' && c != '\n')
+		{
+      is_word = true;
+			// printf("%c", c);
+		}
+	}
 
   return num_words;
 }
@@ -57,6 +73,27 @@ int num_words(FILE* infile) {
  * Useful functions: fgetc(), isalpha(), tolower(), add_word().
  */
 void count_words(WordCount **wclist, FILE *infile) {
+  printf("starts running count_words \n");
+  char c;
+  char word[MAX_WORD_LEN];
+  size_t size = 0;
+  while((c = fgetc(infile)) != EOF)
+	{
+    // printf("%c", c);
+		if((c == ' ' || c == '\n' || !isalpha(c)) && (size > 0))
+		{
+			// printf("\n");
+      word[size] = '\0';
+      add_word(wclist, word);
+      size = 0;
+		}
+		else if (c != ' ' && c != '\n' && isalpha(c))
+		{
+			// printf("%c", c);
+      word[size] = tolower(c);
+      size++;
+		}
+	}
 }
 
 /*
@@ -64,7 +101,10 @@ void count_words(WordCount **wclist, FILE *infile) {
  * Useful function: strcmp().
  */
 static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
-  return 0;
+  if (wc1->count != wc2->count) {
+    return wc1->count < wc2->count;
+  }
+  return strcmp(wc1->word, wc2->word) < 0;
 }
 
 // In trying times, displays a helpful message.
@@ -131,15 +171,23 @@ int main (int argc, char *argv[]) {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
+    infile = fopen(argv[optind], "r");
+  }
+
+  if (infile == NULL) {
+    return -1;
   }
 
   if (count_mode) {
+    total_words = num_words(infile);
     printf("The total number of words is: %i\n", total_words);
   } else {
+    count_words(&word_counts, infile);
     wordcount_sort(&word_counts, wordcount_less);
-
     printf("The frequencies of each word are: \n");
     fprint_words(word_counts, stdout);
 }
+  fclose(infile);
+
   return 0;
 }
